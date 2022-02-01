@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block head %}
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <title>C19 Dashboard</title>
+{% endblock %}
+
+{% block body %}
+    <h1>COVID-19 Dashboard</h1>
+    <a href="/">Home</a>
+    <a href="/api">API</a>
+    <hr>
+    <h2>Cases in {{data[-1]['country_region']}}</h2>
+    <h2>{{data[-1]['date']}}</h2>
+
+    <div class="wrapper">
+        <div class="grid-1">
+            <span class="label">Total Cases</span>
+            <div class="count">{{dash['total_cases']}}</div>
+            <div class="count-new">+TBD</div>
+        </div>
+        <div class="grid-2">
+            <span class="label">7-day Cases (Total)</span>
+            <div class="count">{{dash['total_cases_seven']}}</div>
+        </div>
+        <div class="grid-3">
+            <span class="label">7-day Cases (Average)</span>
+            <div class="count">{{dash['average_cases_seven']}}</div>
+            <!-- <div class="count-info">min: 4111 max: 5200</div> -->
+        </div>
+        <div class="grid-4">
+            <span class="label">Deaths</span>
+            <div class="count">{{dash['total_deaths']}}</div>
+            <div class="count-new">+TBD</div>
+        </div>
+        <div class="grid-5">
+            <span class="label">7-day Deaths (Total)</span>
+            <div class="count">{{dash['total_deaths_seven']}}</div>
+        </div>
+        <div class="grid-6">
+            <span class="label">7-day Deaths (Average)</span>
+            <div class="count">{{dash['average_deaths_seven']}}</div>
+            <!-- <div class="count-info">min: 4111 max: 5200</div> -->
+        </div>
+        <div class="grid-graph">
+            <span class="label">Daily New Cases</span>
+            <div id="daily-graph"></div>
+        </div>
+    </div>
+{% endblock %}
+
+
+{% block script %}
+    <script>
+        let data = JSON.parse('{{ data | tojson | safe }}');
+    </script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/graph.js') }}"></script>
+{% endblock %}
