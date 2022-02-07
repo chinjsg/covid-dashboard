@@ -6,18 +6,41 @@
 {% endblock %}
 
 {% block body %}
-    <h1>COVID-19 Dashboard</h1>
+    <!-- <h1>COVID-19 Dashboard</h1>
     <a href="/">Home</a>
-    <a href="/api">API</a>
-    <hr>
-    <h2>Cases in {{data[-1]['country_region']}}</h2>
-    <h2>{{data[-1]['date']}}</h2>
+    <a href="/api">API</a> -->
+
+    <div class="temp">
+        <a href="/update">Manual Update</a>
+    </div>
+    <br>
+    <div class="notice">
+        <span class="nitem">Notice: Due to current limitations, the data on this web application is not automatically updated. To update, click the manual update button above.</span>
+    </div>
+    <br>
+    <form method="POST">
+        <select name="selection" id="selection" onchange="this.form.submit()">
+            <option value="{{ options[0] }}" selected>{{ options[0] }}</option>
+            {% for sel in options[1] %}
+            <option value="{{ sel }}">{{ sel }}</option>
+            {% endfor %}
+        </select>
+    </form>
+
+    <h2>Cases in {{data[-1]['combined_key']}}</h2>
+    <h2>{{date}}</h2>
 
     <div class="wrapper">
         <div class="grid-1">
             <span class="label">Total Cases</span>
             <div class="count">{{dash['total_cases']}}</div>
-            <div class="count-new">+TBD</div>
+            <div class="count-new">
+                {% if dash['new_cases']==0 %}
+                    -
+                {% else %}
+                    +{{dash['new_cases']}}
+                {% endif %}
+            </div>
         </div>
         <div class="grid-2">
             <span class="label">7-day Cases (Total)</span>
@@ -31,7 +54,13 @@
         <div class="grid-4">
             <span class="label">Deaths</span>
             <div class="count">{{dash['total_deaths']}}</div>
-            <div class="count-new">+TBD</div>
+            <div class="count-new">
+                {% if dash['new_cases']==0 %}
+                    -
+                {% else %}
+                    +{{dash['new_deaths']}}
+                {% endif %}
+            </div>
         </div>
         <div class="grid-5">
             <span class="label">7-day Deaths (Total)</span>
@@ -47,6 +76,33 @@
             <div id="daily-graph"></div>
         </div>
     </div>
+
+    <br>
+    <div class="credit">
+        Source: <a href="https://github.com/CSSEGISandData/COVID-19">JHU CSSE COVID-19 Data</a>
+    </div>
+
+    <!-- FOR TESTING -->
+    <!-- <h3>Records</h3>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>date</th>
+            <th>Country_Region</th>
+            <th>Confirmed</th>
+            <th>Deaths</th>
+        </tr>
+        {% for d in data %}
+            <tr>
+                <td>{{ d.id }}</td>
+                <td>{{ d.date }}</td>
+                <td>{{ d.country_region }}</td>
+                <td>{{ d.confirmed }}</td>
+                <td>{{ d.deaths }}</td>
+            </tr>
+        {% endfor %}
+    </table> -->
+
 {% endblock %}
 
 

@@ -1,7 +1,43 @@
 body, html {
-    margin: 0;
     font-family: sans-serif;
     height: 100%;
+}
+
+.banner {
+    padding: 2px 16px;
+    background: rgb(29, 61, 163);
+    color: #f1f1f1;
+    display: flex;
+    justify-content: space-between;
+}
+
+.bannertxt {
+    text-decoration: none;
+    color: white;
+}
+.logo {
+    display: inline-flex;
+}
+
+.nav {
+    margin-top: auto;
+    margin-bottom: auto;
+}
+
+.temp {
+    text-decoration: none;
+    text-align: center;
+}
+.notice {
+    border-radius: 5px;
+    text-align: center;
+}
+
+.nitem {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color:rgb(240, 223, 184);
+    padding: 5px;
 }
 
 .wrapper {
@@ -67,4 +103,9 @@ body, html {
 
   .axis line {
     stroke: #ccc;
+  }
+  
+  .credit {
+      text-align: center;
+      font-size: small;
   }

@@ -1,10 +1,11 @@
 // To be moved server-side
 // Calculate new cases from data
 data[0]['newCases'] = data[0]['confirmed']
+console.log(data.length)
 for (let i = 1; i < data.length; i++) {
     data[i]['newCases'] = data[i]['confirmed'] - data[i-1]['confirmed']
 }
-
+console.log(data)
 //////////////////////////////////////////////////////////////////////////////
 
 let xScale = null;
@@ -37,8 +38,8 @@ xScale = d3.scaleBand()
     .range([0+margin.left, width-margin.right])
 
 yScale = d3.scaleLinear()
-    .domain([0, domainUpper])
-    .range([height-margin.bottom, 0+margin.top])
+    .domain([domainUpper, 0])
+    .range([0+margin.top, height-margin.bottom])
 
 // Axis object
 yAxisGrid = d3.axisLeft(yScale)
