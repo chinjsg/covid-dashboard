@@ -185,7 +185,7 @@ def index():
         'new_cases': new_cases,
         'new_deaths': new_deaths
     }
-    
+
     datestr = datetime.strptime(data[-1]['date'].split('T')[0], '%Y-%m-%d').strftime("%c")
     datestr= datestr.split(' ')
     datestr = datestr[1] + ' ' + datestr[3] + ', ' + datestr[5]
@@ -279,14 +279,12 @@ def update():
                                 isTarget = True
             
                 if isTarget:
-                    print(row)
                     print(fname)
                     new_row = CaseModel(date=datetime.strptime(fname.split('.')[0], '%m-%d-%Y'),
                                         fips=row[0],
                                         admin2=row[1],
                                         province_state=row[2],
                                         country_region=row[3],
-                                        #last_update=row[5],
                                         lat=row[5],
                                         long_=row[6],
                                         confirmed=row[7],
@@ -305,7 +303,7 @@ def update():
     return redirect('/')
 
 if __name__ == "__main__":
-    app.run(debug=True) 
+    app.run(debug=False) 
 
 
 

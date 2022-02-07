@@ -6,10 +6,6 @@
 {% endblock %}
 
 {% block body %}
-    <!-- <h1>COVID-19 Dashboard</h1>
-    <a href="/">Home</a>
-    <a href="/api">API</a> -->
-
     <div class="temp">
         <a href="/update">Manual Update</a>
     </div>
@@ -49,7 +45,6 @@
         <div class="grid-3">
             <span class="label">7-day Cases (Average)</span>
             <div class="count">{{dash['average_cases_seven']}}</div>
-            <!-- <div class="count-info">min: 4111 max: 5200</div> -->
         </div>
         <div class="grid-4">
             <span class="label">Deaths</span>
@@ -69,7 +64,6 @@
         <div class="grid-6">
             <span class="label">7-day Deaths (Average)</span>
             <div class="count">{{dash['average_deaths_seven']}}</div>
-            <!-- <div class="count-info">min: 4111 max: 5200</div> -->
         </div>
         <div class="grid-graph">
             <span class="label">Daily New Cases</span>
@@ -81,27 +75,6 @@
     <div class="credit">
         Source: <a href="https://github.com/CSSEGISandData/COVID-19">JHU CSSE COVID-19 Data</a>
     </div>
-
-    <!-- FOR TESTING -->
-    <!-- <h3>Records</h3>
-    <table>
-        <tr>
-            <th>ID</th>
-            <th>date</th>
-            <th>Country_Region</th>
-            <th>Confirmed</th>
-            <th>Deaths</th>
-        </tr>
-        {% for d in data %}
-            <tr>
-                <td>{{ d.id }}</td>
-                <td>{{ d.date }}</td>
-                <td>{{ d.country_region }}</td>
-                <td>{{ d.confirmed }}</td>
-                <td>{{ d.deaths }}</td>
-            </tr>
-        {% endfor %}
-    </table> -->
 
 {% endblock %}
 
