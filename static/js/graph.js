@@ -5,7 +5,7 @@ console.log(data.length)
 for (let i = 1; i < data.length; i++) {
     data[i]['newCases'] = data[i]['confirmed'] - data[i-1]['confirmed']
 }
-console.log(data)
+
 //////////////////////////////////////////////////////////////////////////////
 
 let xScale = null;

@@ -1,16 +1,12 @@
 from flask import Flask, render_template, request, redirect, json, jsonify, abort
 from flask_restful import Api, Resource
-from flask_sqlalchemy import SQLAlchemy
 from datetime import date, datetime
-from flask_marshmallow import Marshmallow
 import requests
 import csv
+import db
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///cases.db'
-db = SQLAlchemy(app)
 api = Api(app)
-ma = Marshmallow(app)
 
 url = "https://api.github.com/repos/CSSEGISandData/COVID-19/contents/csse_covid_19_data/csse_covid_19_daily_reports"
 file_url = "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/"
@@ -63,112 +59,42 @@ def update_format(row, cols, datestr):
             new_row[6] = row[6]
             new_row[7] = row[7]
 
-    return new_row
-
-class CaseModel(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.DateTime, nullable=False)
-    fips = db.Column(db.String(100))
-    admin2 = db.Column(db.String(100))
-    province_state = db.Column(db.String(100))
-    country_region = db.Column(db.String(100), nullable=False)
-    lat = db.Column(db.Float)
-    long_ = db.Column(db.Float)
-    confirmed = db.Column(db.Integer)
-    deaths = db.Column(db.Integer)
-    recovered = db.Column(db.Integer)
-    active = db.Column(db.Integer)
-    combined_key = db.Column(db.String(200))
-    incidence_rate = db.Column(db.Float)
-    case_fatality_ratio = db.Column(db.Float)
-
-    def __repr__(self):
-        return "<CaseModel {'id':%s, 'date':%s, 'country_region':%s, 'confirmed':%s, 'deaths':%s}>" % (self.id, self.date, self.country_region, self.confirmed, self.deaths)
-
-# Multiple Day Case Schema
-class CaseSchema(ma.Schema):
-  class Meta:
-    fields = ('id', 'date', 'country_region', 'confirmed', 'deaths', 'combined_key')
-
-# Single Day Case Schema
-class DailySchema(ma.Schema):
-  class Meta:
-    fields = ('date', 'confirmed', 'deaths', 'recovered', 'active')
-
-# Init schema
-daily_schema = DailySchema()
-case_schema = CaseSchema(many=True)
-
-#
-
-# API endpoint handlers
-class CountAll(Resource):
-    def get(self, country):
-        exists = CaseModel.query.filter(CaseModel.country_region.ilike(country)).first()
-        if not exists:
-            print(country + " does not exist")
-            abort(404, description="Resource not found")
-        else:
-            cases = CaseModel.query.filter_by(country_region=country).order_by(CaseModel.date.desc()).all()
-            result = case_schema.dump(cases)
-            # Modify the date here (for loop)
-            return jsonify(result)  
+    return new_row 
 
 class CountLatest(Resource):
     def get(self, country):
-        exists = CaseModel.query.filter(CaseModel.country_region.ilike(country)).first()
+        exists = db.check_country_exists(country)
         if not exists:
-            print(country + " does not exist")
+            print("API: " + country + " does not exist")
             abort(404, description="Resource not found")
         else:
-            current = CaseModel.query.filter_by(country_region=country).order_by(CaseModel.date.desc()).first()
-            current = daily_schema.dump(current)
-            current_date = datetime.strptime(current['date'].split('T')[0], '%Y-%m-%d').date()
-            total_cases = current['confirmed']
-            total_deaths = current['deaths']
-
-            previous = CaseModel.query.filter_by(country_region=country).filter(CaseModel.date < current_date).order_by(CaseModel.date.desc()).first()
-            previous = daily_schema.dump(previous)
-            new_cases = total_cases - previous['confirmed']
-            new_deaths = total_deaths - previous['deaths']
-
-            latest = {
-                'date': str(current_date),
-                'total_cases': total_cases,
-                'total_deaths': total_deaths,
-                'new_cases': new_cases,
-                'new_deaths': new_deaths
-            }  
-
-            return jsonify(latest)  
+            data = db.get_latest_summary(country)
+            return jsonify(data)  
 
 # API endpoints
-api.add_resource(CountAll, "/api/<string:country>")
 api.add_resource(CountLatest, "/api/<string:country>/latest")
 
 # Website endpoints and handlers
 @app.route('/', methods=['GET', 'POST'])
 def index():
     selection = "Pima, Arizona, US"
-    options = []
-    for ck in db.session.query(CaseModel.combined_key).distinct():
-        ck = str(ck)
-        ck = ck.replace("(", "").replace(")", "").replace("'", "").rstrip(',')
-        if ck != "":
-            options.append(ck)
+    options = db.get_combined_keys()
+
 
     if request.method == 'POST':
         selection = request.form['selection']
         sel = selection.replace(" ", "").split(',')
+        # Example format ['Pima', 'Arizona', 'US']
         count = len(sel)
         if count == 1:
-            data = case_schema.dump(CaseModel.query.filter_by(country_region=sel[0]).order_by(CaseModel.date).all())
+            data = db.get_cases(sel[0])
         elif count == 2:
-            data = case_schema.dump(CaseModel.query.filter_by(country_region=sel[1], province_state=sel[0]).order_by(CaseModel.date).all())
+            data = db.get_cases(sel[1], sel[0])
         else:
-            data = case_schema.dump(CaseModel.query.filter_by(country_region=sel[2], province_state=sel[1], admin2=sel[0]).order_by(CaseModel.date).all())
+            data = db.get_cases(sel[2], sel[1], sel[0])
     else:
-        data = case_schema.dump(CaseModel.query.filter_by(country_region='US', province_state='Arizona', admin2='Pima').order_by(CaseModel.date).all())
+        data = db.get_cases('US', 'Arizona', 'Pima')
+
 
     data_seven = data[-7:]
     total_cases_seven = data_seven[-1]['confirmed'] - data_seven[0]['confirmed']
@@ -186,9 +112,7 @@ def index():
         'new_deaths': new_deaths
     }
 
-    datestr = datetime.strptime(data[-1]['date'].split('T')[0], '%Y-%m-%d').strftime("%c")
-    datestr= datestr.split(' ')
-    datestr = datestr[1] + ' ' + datestr[3] + ', ' + datestr[5]
+    date_string = data[-1]['date'].strftime("%B %e, %G")
 
     if selection == "":
         selection = options.pop()
@@ -196,7 +120,7 @@ def index():
         options.remove(selection)
     options = [selection, options]
 
-    return render_template('index.html', data=data, dash=dash_data, options=options, date=datestr)
+    return render_template('index.html', data=data, dash=dash_data, options=options, date=date_string)
 
 @app.route('/api')
 def api():
@@ -227,9 +151,8 @@ def update():
             filenames.append(file['name'])
     filenames.sort(key = lambda fname: datetime.strptime(fname.split('.')[:1][0], '%m-%d-%Y'))
 
-    current = CaseModel.query.order_by(CaseModel.date.desc()).first()
-    current = daily_schema.dump(current)
-    current_date = str(datetime.strptime(current['date'].split('T')[0], '%Y-%m-%d').date().strftime('%m-%d-%Y'))
+    current_date = db.get_latest_date()
+    current_date = current_date.strftime('%m-%d-%Y')
 
     last_date_str = current_date + '.csv'
     index = filenames.index(last_date_str)
@@ -238,20 +161,21 @@ def update():
     if len(filenames) == 0:
         print("Already up to date")
     else:
-        print("Updating...")
+        print("New record found. Updating...")
         # For each file
         for fname in filenames:
-            print('<Adding: ' + fname + '>')
+            print('<Reading: ' + fname + '>')
             furl = file_url + fname
 
             response = requests.get(furl, timeout=5)
             response_decoded = [line.decode('utf-8') for line in response.iter_lines()]
             contents = list(csv.reader(response_decoded))
             
-            # Check columns are at a maximum of 14 columns
+            # Check column names are at a maximum of 14 columns
             col_names = contents[0]
-            if (len(col_names) > 14):
-                print('There are more than 14 columns and program needs to be updated. Exiting...')
+            #print(col_names)
+            if (len(col_names) > 14 or len(col_names) < 14):
+                print('Mismatched format. The number of columns is not 14. Exiting...')
                 break
 
             # Read/Write each row to the database
@@ -261,6 +185,7 @@ def update():
                     continue
 
                 isTarget = False
+                # get the index of the country_region column
                 index = country_index[len(row)]
                 country = row[index]
                 if country in target.keys():
@@ -277,33 +202,24 @@ def update():
                                     isTarget = True
                             else:
                                 isTarget = True
-            
+
                 if isTarget:
-                    print(fname)
-                    new_row = CaseModel(date=datetime.strptime(fname.split('.')[0], '%m-%d-%Y'),
-                                        fips=row[0],
-                                        admin2=row[1],
-                                        province_state=row[2],
-                                        country_region=row[3],
-                                        lat=row[5],
-                                        long_=row[6],
-                                        confirmed=row[7],
-                                        deaths=row[8],
-                                        recovered=row[9],
-                                        active=row[10],
-                                        combined_key=row[11],
-                                        incidence_rate=row[12],
-                                        case_fatality_ratio=row[13])
-                    try:
-                        db.session.add(new_row)
-                        db.session.commit()
-                    except:
-                        print('There was a problem inserting into the database')
+                    print(fname + ' - ' + country)
+                    case_date = datetime.strptime(fname.split('.')[0], '%m-%d-%Y').date()
+                    new_row = [case_date]
+                    for col in row:
+                        if col == '':
+                            new_row.append(None)
+                        else:
+                            new_row.append(col)
+                    # remove the last_updated column
+                    new_row.pop(col_names.index('Last_Update')+1)
+                    db.insert_case(new_row)
 
     return redirect('/')
 
 if __name__ == "__main__":
-    app.run(debug=False) 
+    app.run(debug=True) 
 
 
 
