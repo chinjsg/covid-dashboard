@@ -61,7 +61,7 @@ def update_format(row, cols, datestr):
 
     return new_row 
 
-class CountLatest(Resource):
+class GetCountry(Resource):
     def get(self, country):
         exists = db.check_country_exists(country)
         if not exists:
@@ -71,8 +71,30 @@ class CountLatest(Resource):
             data = db.get_latest_summary(country)
             return jsonify(data)  
 
+class GetCountryPS(Resource):
+    def get(self, country, province_state):
+        exists = db.check_country_exists(country, province_state)
+        if not exists:
+            print("API: " + country + " or " + province_state + " does not exist")
+            abort(404, description="Resource not found")
+        else:
+            data = db.get_latest_summary(country, province_state)
+            return jsonify(data) 
+
+class GetCountryPSCounty(Resource):
+    def get(self, country, province_state, county):
+        exists = db.check_country_exists(country, province_state, county)
+        if not exists:
+            print("API: " + country + ", " + province_state + ", or " + county + " does not exist")
+            abort(404, description="Resource not found")
+        else:
+            data = db.get_latest_summary(country, province_state, county)
+            return jsonify(data) 
+
 # API endpoints
-api.add_resource(CountLatest, "/api/<string:country>/latest")
+api.add_resource(GetCountry, "/api/<string:country>")
+api.add_resource(GetCountryPS, "/api/<string:country>/<string:province_state>")
+api.add_resource(GetCountryPSCounty, "/api/<string:country>/<string:province_state>/<string:county>")
 
 # Website endpoints and handlers
 @app.route('/', methods=['GET', 'POST'])

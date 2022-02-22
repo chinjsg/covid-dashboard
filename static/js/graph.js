@@ -16,8 +16,8 @@ let xAxis = null;
 let yAxis = null;
 
 // Dimensions
-let w = document.getElementById("daily-graph").parentNode.clientWidth;
-let h = document.getElementById("daily-graph").parentNode.parentElement.offsetHeight;
+let w = document.getElementById("grid-graph").offsetWidth;
+let h = document.getElementById("grid-graph").offsetHeight;
 
 let margin = {top: 5, right:10, bottom: 5, left: 45};
 let width = w - margin.left - margin.right;

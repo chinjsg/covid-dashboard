@@ -5,14 +5,16 @@
     <title>C19 Dashboard</title>
 {% endblock %}
 
-{% block body %}
-    <div class="temp">
-        <a href="/update">Manual Update</a>
-    </div>
-    <br>
+{% block notice %}
     <div class="notice">
-        <span class="nitem">Notice: Due to current limitations, the data on this web application is not automatically updated. To update, click the manual update button above.</span>
+        <b>Notice: Due to current limitations, the data on this web application is not automatically updated. To update, click the manual update button below.</b><br><br>
+        <div class="temp">
+            <a href="/update">Manual Update</a>
+        </div>
     </div>
+{% endblock %}
+
+{% block body %}
     <br>
     <form method="POST">
         <select name="selection" id="selection" onchange="this.form.submit()">
@@ -26,8 +28,9 @@
     <h2>Cases in {{data[-1]['combined_key']}}</h2>
     <h2>{{date}}</h2>
 
+
     <div class="wrapper">
-        <div class="grid-1">
+        <div class="grid-1 span-single">
             <span class="label">Total Cases</span>
             <div class="count">{{dash['total_cases']}}</div>
             <div class="count-new">
@@ -38,15 +41,15 @@
                 {% endif %}
             </div>
         </div>
-        <div class="grid-2">
+        <div class="grid-2 span-single">
             <span class="label">7-day Cases (Total)</span>
             <div class="count">{{dash['total_cases_seven']}}</div>
         </div>
-        <div class="grid-3">
+        <div class="grid-3 span-single">
             <span class="label">7-day Cases (Average)</span>
             <div class="count">{{dash['average_cases_seven']}}</div>
         </div>
-        <div class="grid-4">
+        <div class="grid-4 span-single">
             <span class="label">Deaths</span>
             <div class="count">{{dash['total_deaths']}}</div>
             <div class="count-new">
@@ -57,25 +60,22 @@
                 {% endif %}
             </div>
         </div>
-        <div class="grid-5">
+        <div class="grid-5 span-single">
             <span class="label">7-day Deaths (Total)</span>
             <div class="count">{{dash['total_deaths_seven']}}</div>
         </div>
-        <div class="grid-6">
+        <div class="grid-6 span-single">
             <span class="label">7-day Deaths (Average)</span>
             <div class="count">{{dash['average_deaths_seven']}}</div>
         </div>
-        <div class="grid-graph">
-            <span class="label">Daily New Cases</span>
-            <div id="daily-graph"></div>
+        <div class="grid-graph" id="grid-graph">
+            <span class="graph-label">Daily New Cases</span>
+            <div class="graph" id="daily-graph"></div>
+            <div class="graph-credit">
+                Source: <a href="https://github.com/CSSEGISandData/COVID-19">JHU CSSE COVID-19 Data</a>
+            </div>
         </div>
     </div>
-
-    <br>
-    <div class="credit">
-        Source: <a href="https://github.com/CSSEGISandData/COVID-19">JHU CSSE COVID-19 Data</a>
-    </div>
-
 {% endblock %}
 
 

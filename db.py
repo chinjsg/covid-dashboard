@@ -62,10 +62,20 @@ def get_combined_keys():
 
     return data
 
-def get_latest_summary(country):
+def get_latest_summary(*arg):
+    arg_count = len(arg)
+    if arg_count == 1:
+        stmt = "SELECT * FROM cases WHERE LOWER(country_region) LIKE LOWER(%s) ORDER BY date DESC LIMIT 7"
+    elif arg_count == 2:
+        stmt = "SELECT * FROM cases WHERE LOWER(country_region) LIKE LOWER(%s) AND LOWER(province_state) LIKE LOWER(%s) ORDER BY date DESC LIMIT 7"
+    else:
+        stmt = "SELECT * FROM cases WHERE LOWER(country_region) LIKE LOWER(%s) AND LOWER(province_state) LIKE LOWER(%s) AND LOWER(admin2) LIKE LOWER(%s) ORDER BY date DESC LIMIT 7"
+        arg = (arg[0], arg[1], arg[2])
+
+
     conn = get_conn()
     cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cursor.execute("SELECT * FROM cases WHERE LOWER(country_region) LIKE LOWER(%s) ORDER BY date DESC LIMIT 7", (country,))
+    cursor.execute(stmt, arg)
     count = cursor.rowcount
     data = cursor.fetchall()
 
@@ -96,10 +106,19 @@ def insert_case(params):
     conn.commit()
     conn.close()
 
-def check_country_exists(country):
+def check_country_exists(*arg):
+    arg_count = len(arg)
+    if arg_count == 1:
+        stmt = "SELECT * FROM cases WHERE LOWER(country_region) LIKE LOWER(%s)"
+    elif arg_count == 2:
+        stmt = "SELECT * FROM cases WHERE LOWER(country_region) LIKE LOWER(%s) AND LOWER(province_state) LIKE LOWER(%s)"
+    else:
+        stmt = "SELECT * FROM cases WHERE LOWER(country_region) LIKE LOWER(%s) AND LOWER(province_state) LIKE LOWER(%s) AND LOWER(admin2) LIKE LOWER(%s)"
+        arg = (arg[0], arg[1], arg[2])
+
     conn = get_conn()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM cases WHERE LOWER(country_region) LIKE LOWER(%s)", (country,))
+    cursor.execute(stmt, arg)
     count = cursor.rowcount
     cursor.close()
     conn.close()

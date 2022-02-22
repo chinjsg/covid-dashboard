@@ -8,16 +8,18 @@
     {% block head %}{% endblock %}
 </head>
 <body>
-    <div class="banner" id="banner">
-        <div class="logo">
-            <h1><a href="/" class="bannertxt">COVID-19 Dashboard</a></h1>
+    <div class="header">
+        <div class="header-logo">
+            <a href="/" class="header-logo-item">COVID-19 Dashboard</a>
         </div>
-        <br>
-        <div class="nav">
-            <h3><a href="/api" class="bannertxt">API</a></h3>
+        <div class="header-nav">
+            <a href="/api" class="header-nav-item  header-nav-item-end">API</a>
         </div>
     </div>
-    {% block body %}{% endblock %}
+    {% block notice %}{% endblock %}
+    <div class="content">
+        {% block body %}{% endblock %}
+    </div>
     <br>
     <hr>
     <div style="text-align:center">CHINJSG 2022</div>
