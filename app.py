@@ -1,4 +1,5 @@
-from flask import Flask, render_template, request, redirect, json, jsonify, abort
+from select import select
+from flask import Flask, render_template, request, redirect, json, jsonify, abort, url_for
 from flask_restful import Api, Resource
 from datetime import date, datetime
 import requests
@@ -19,7 +20,7 @@ country_index = {
     14: 3
 }
 
-target = {'US': {'Arizona': ['Pima']}, 'Singapore': {}}
+target = {'US': {'Arizona': ['Maricopa', 'Pima'], 'Washington': ['King']}, 'Singapore': {}}
 
 def format_datestr(datestr):
     """
@@ -91,62 +92,194 @@ class GetCountryPSCounty(Resource):
             data = db.get_latest_summary(country, province_state, county)
             return jsonify(data) 
 
-# API endpoints
-api.add_resource(GetCountry, "/api/<string:country>")
-api.add_resource(GetCountryPS, "/api/<string:country>/<string:province_state>")
-api.add_resource(GetCountryPSCounty, "/api/<string:country>/<string:province_state>/<string:county>")
 
-# Website endpoints and handlers
+class GetCountryAll(Resource):
+    def get(self, country):
+        exists = db.check_country_exists(country)
+        if not exists:
+            print("API: " + country + " does not exist")
+            abort(404, description="Resource not found")
+        else:
+            data = db.get_cases(country)
+            return jsonify(data)  
+
+class GetCountryPSAll(Resource):
+    def get(self, country, province_state):
+        exists = db.check_country_exists(country, province_state)
+        if not exists:
+            print("API: " + country + " or " + province_state + " does not exist")
+            abort(404, description="Resource not found")
+        else:
+            data = db.get_cases(country, province_state)
+            return jsonify(data) 
+
+class GetCountryPSCountyAll(Resource):
+    def get(self, country, province_state, county):
+        exists = db.check_country_exists(country, province_state, county)
+        if not exists:
+            print("API: " + country + ", " + province_state + ", or " + county + " does not exist")
+            abort(404, description="Resource not found")
+        else:
+            data = db.get_cases(country, province_state, county)
+            return jsonify(data) 
+
+# API endpoints
+api.add_resource(GetCountry, "/api/<string:country>/latest")
+api.add_resource(GetCountryPS, "/api/<string:country>/<string:province_state>/latest")
+api.add_resource(GetCountryPSCounty, "/api/<string:country>/<string:province_state>/<string:county>/latest")
+
+api.add_resource(GetCountryAll, "/api/<string:country>")
+api.add_resource(GetCountryPSAll, "/api/<string:country>/<string:province_state>")
+api.add_resource(GetCountryPSCountyAll, "/api/<string:country>/<string:province_state>/<string:county>")
+
+class GetListCountry(Resource):
+    def get(self):
+        data = db.get_countries()
+        return jsonify(data)
+
+class GetListProvinceState(Resource):
+    def get(self, country):
+        data = db.get_provinceState_by_country(country)
+        return jsonify(data)
+
+class GetListCounty(Resource):
+    def get(self, country, province_state):
+        data = db.get_county_by_countryState(country, province_state)
+        return jsonify(data)
+
+class GetAllByState(Resource):
+    def get(self, country, province_state, county):
+        data = db.get_cases(country, province_state, county)
+        return jsonify(data)
+
+# Webpage script endpoints
+api.add_resource(GetListCountry, "/country")
+api.add_resource(GetListProvinceState, "/<string:country>")
+api.add_resource(GetListCounty, "/<string:country>/<string:province_state>")
+
+api.add_resource(GetAllByState, "/all/<string:country>/<string:province_state>/<string:county>")
+
+# Webpage endpoints and handlers
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    selection = "Pima, Arizona, US"
-    options = db.get_combined_keys()
+    country_list = db.get_countries()['countries']
+    if 'US' in country_list:
+        selection = ['US'] # default
+    else:
+        selection = [country_list[0]]
 
-
-    if request.method == 'POST':
-        selection = request.form['selection']
-        sel = selection.replace(" ", "").split(',')
-        # Example format ['Pima', 'Arizona', 'US']
-        count = len(sel)
+    selected = request.args.get('selected')
+    if selected is not None:
+        selection = selected.split(',')
+        count = len(selection)
         if count == 1:
-            data = db.get_cases(sel[0])
+            data = db.get_cases(selection[0])
+            dash_data = db.get_latest_summary(selection[0])
         elif count == 2:
-            data = db.get_cases(sel[1], sel[0])
+            data = db.get_cases(selection[0], selection[1])
+            dash_data = db.get_latest_summary(selection[0], selection[1])
         else:
-            data = db.get_cases(sel[2], sel[1], sel[0])
+            data = db.get_cases(selection[0], selection[1], selection[2])
+            dash_data = db.get_latest_summary(selection[0], selection[1], selection[2])
+        print('batchest')
+        print(selection)
     else:
-        data = db.get_cases('US', 'Arizona', 'Pima')
+        print('Showing default US')
+        data = db.get_cases(selection[0])
+        dash_data = db.get_latest_summary(selection[0])
 
+    date_string = db.get_latest_date().strftime("%B %e, %G")
 
-    data_seven = data[-7:]
-    total_cases_seven = data_seven[-1]['confirmed'] - data_seven[0]['confirmed']
-    total_deaths_seven = data_seven[-1]['deaths'] - data_seven[0]['deaths']
-    new_cases = data_seven[-1]['confirmed'] - data_seven[-2]['confirmed']
-    new_deaths = data_seven[-1]['deaths'] - data_seven[-2]['deaths']
-    dash_data = {
-        'total_cases': data_seven[-1]['confirmed'],
-        'total_deaths': data_seven[-1]['deaths'],
-        'total_cases_seven': total_cases_seven,
-        'total_deaths_seven': total_deaths_seven,
-        'average_cases_seven': round(total_cases_seven / 7, 2),
-        'average_deaths_seven': round(total_deaths_seven / 7, 2),
-        'new_cases': new_cases,
-        'new_deaths': new_deaths
-    }
+    count = len(selection)
+    
+    ddl = []
+    print(selection)
+    if count == 1:
+        selected_country = selection[0]
 
-    date_string = data[-1]['date'].strftime("%B %e, %G")
+        ddl_country = {
+            'selected': selected_country,
+            'options': country_list
+        }
+        ddl.append(ddl_country)
+        prov_state_list = db.get_provinceState_by_country(selected_country)
+        if prov_state_list['count'] > 0:
+            ddl_provstate = {
+                'selected': "",
+                'options': prov_state_list['province_states']
+            }
+            ddl.append(ddl_provstate)
 
-    if selection == "":
-        selection = options.pop()
+    elif count == 2:
+        selected_country = selection[0]
+
+        selected_provstate = selection[1]
+        prov_state_list = db.get_provinceState_by_country(selected_country)
+        print('provstatelist')
+        print(prov_state_list)
+
+        ddl_country = {
+            'selected': selected_country,
+            'options': country_list
+        }
+        ddl_provstate = {
+            'selected': selected_provstate,
+            'options': prov_state_list['province_states']
+        }
+        ddl.append(ddl_country)
+        ddl.append(ddl_provstate)
+
+        county_list = db.get_county_by_countryState(selected_country, selected_provstate)
+        if county_list['count'] > 0:
+            ddl_county = {
+                'selected': "",
+                'options': county_list['counties']
+            }
+            ddl.append(ddl_county)
     else:
-        options.remove(selection)
-    options = [selection, options]
+        selected_country = selection[0]
 
-    return render_template('index.html', data=data, dash=dash_data, options=options, date=date_string)
+        selected_provstate = selection[1]
+        prov_state_list = db.get_provinceState_by_country(selected_country)
+
+        selected_county = selection[2]
+        county_list = db.get_county_by_countryState(selected_country, selected_provstate)
+
+        ddl_country = {
+            'selected': selected_country,
+            'options': country_list
+        }
+        ddl_provstate = {
+            'selected': selected_provstate,
+            'options': prov_state_list['province_states']
+        }
+        ddl_county = {
+            'selected': selected_county,
+            'options': county_list['counties']
+        }
+        ddl.append(ddl_country)
+        ddl.append(ddl_provstate)
+        ddl.append(ddl_county)
+
+    location = ''
+    for obj in reversed(ddl):
+        if obj['selected'] != '':
+            if location != '':
+                location += ', '
+            location += obj['selected']
+
+    # Format of options
+    # [ 
+    #   {'selected': xxx, 'options'[]}, 
+    #   {'selected': xxx, 'options'[]}, 
+    #   {'selected': xxx, 'options'[]}
+    # ]
+
+    return render_template('index.html', data=data, dash=dash_data, ddl=ddl, loc=location, date=date_string)
 
 @app.route('/api')
 def api():
-    return render_template('api.html')
+    return render_template('api.html', base_url=request.base_url)
 
 @app.route('/update')
 def update():
@@ -238,12 +371,19 @@ def update():
                     new_row.pop(col_names.index('Last_Update')+1)
                     db.insert_case(new_row)
 
-    return redirect('/')
+    # To remember selections in the dropdown lists
+    country = request.args.get('country')
+    province_state = request.args.get('province_state')
+    county = request.args.get('county')
+
+    selected = country
+    if (province_state is not None and county is not None):
+        selected += ',' + province_state + ',' + county
+    elif (province_state is not None):
+        selected += ',' + province_state
+    
+    return redirect(url_for('index', selected=selected))
+
 
 if __name__ == "__main__":
-    app.run(debug=True) 
-
-
-
-
-
+    app.run(debug=True)

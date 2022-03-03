@@ -27,11 +27,13 @@ def get_cases(*arg):
     conn = get_conn()
     cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     if arg_count == 1:
-        stmt = "SELECT * FROM cases WHERE country_region=%s"
+        #stmt = "SELECT * FROM cases WHERE country_region=%s"
+        stmt = "SELECT ROW_NUMBER() OVER (ORDER BY date) as id, date, SUM(confirmed) as confirmed FROM cases WHERE country_region=%s GROUP BY date ORDER BY date asc;"
     elif arg_count == 2:
-        stmt = "SELECT * FROM cases WHERE country_region=%s AND province_state=%s"
+        #stmt = "SELECT * FROM cases WHERE country_region=%s AND province_state=%s"
+        stmt = "SELECT ROW_NUMBER() OVER (ORDER BY date) as id, date, SUM(confirmed) as confirmed FROM cases WHERE country_region=%s AND province_state=%s GROUP BY date ORDER BY date asc"
     else:
-        stmt = "SELECT * FROM cases WHERE country_region=%s AND province_state=%s AND admin2=%s"
+        stmt = "SELECT ROW_NUMBER() OVER (ORDER BY date) as id, date, confirmed FROM cases WHERE country_region=%s AND province_state=%s AND admin2=%s"
         arg = (arg[0], arg[1], arg[2])
     cursor.execute(stmt, arg)
     data = []
@@ -65,11 +67,13 @@ def get_combined_keys():
 def get_latest_summary(*arg):
     arg_count = len(arg)
     if arg_count == 1:
-        stmt = "SELECT * FROM cases WHERE LOWER(country_region) LIKE LOWER(%s) ORDER BY date DESC LIMIT 7"
+        #stmt = "SELECT * FROM cases WHERE LOWER(country_region) LIKE LOWER(%s) ORDER BY date DESC LIMIT 7"
+        stmt = "SELECT date, SUM(confirmed) as confirmed, SUM(deaths) as deaths FROM cases WHERE LOWER(country_region) LIKE LOWER(%s) GROUP BY date ORDER BY date DESC LIMIT 7"
     elif arg_count == 2:
-        stmt = "SELECT * FROM cases WHERE LOWER(country_region) LIKE LOWER(%s) AND LOWER(province_state) LIKE LOWER(%s) ORDER BY date DESC LIMIT 7"
+        #stmt = "SELECT * FROM cases WHERE LOWER(country_region) LIKE LOWER(%s) AND LOWER(province_state) LIKE LOWER(%s) ORDER BY date DESC LIMIT 7"
+        stmt = "SELECT date, SUM(confirmed) as confirmed, SUM(deaths) as deaths FROM cases WHERE LOWER(country_region) LIKE LOWER(%s) AND LOWER(province_state) LIKE LOWER(%s) GROUP BY date ORDER BY date DESC LIMIT 7"
     else:
-        stmt = "SELECT * FROM cases WHERE LOWER(country_region) LIKE LOWER(%s) AND LOWER(province_state) LIKE LOWER(%s) AND LOWER(admin2) LIKE LOWER(%s) ORDER BY date DESC LIMIT 7"
+        stmt = "SELECT date, confirmed, deaths FROM cases WHERE LOWER(country_region) LIKE LOWER(%s) AND LOWER(province_state) LIKE LOWER(%s) AND LOWER(admin2) LIKE LOWER(%s) ORDER BY date DESC LIMIT 7"
         arg = (arg[0], arg[1], arg[2])
 
 
@@ -78,7 +82,8 @@ def get_latest_summary(*arg):
     cursor.execute(stmt, arg)
     count = cursor.rowcount
     data = cursor.fetchall()
-
+    #print('LATEST SUMMARY =========================================')
+    #print(data[0])
     summary = {
         'date': data[0]['date'].strftime("%Y-%m-%d"),
         'total_cases': data[0]['confirmed'],
@@ -92,8 +97,53 @@ def get_latest_summary(*arg):
     }  
     cursor.close()
     conn.close()
-    print(summary)
+    #print(summary)
     return summary
+
+def get_countries():
+    conn = get_conn()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute("SELECT DISTINCT country_region FROM cases")
+    data = cursor.fetchall()
+    count = cursor.rowcount
+    cursor.close()
+    conn.close()
+
+    results = {'countries': [], 'count': count}
+    for d in data:
+        results['countries'].append(d[0])
+
+    return results
+
+def get_provinceState_by_country(country):
+    conn = get_conn()
+    cursor = conn.cursor()
+    cursor.execute("SELECT DISTINCT province_state FROM cases WHERE country_region=%s AND province_state IS NOT NULL" , (country,))
+    data = cursor.fetchall()
+    count = cursor.rowcount
+    cursor.close()
+    conn.close()
+
+    results = {'province_states': [], 'count': count}
+    for d in data:
+        results['province_states'].append(d[0])
+
+    return results
+
+def get_county_by_countryState(country, province_state):
+    conn = get_conn()
+    cursor = conn.cursor()
+    cursor.execute("SELECT DISTINCT admin2 FROM cases WHERE country_region=%s AND province_state=%s AND admin2 IS NOT NULL", (country, province_state))
+    data = cursor.fetchall()
+    count = cursor.rowcount
+    cursor.close()
+    conn.close()
+
+    results = {'counties': [], 'count': count}
+    for d in data:
+        results['counties'].append(d[0])
+
+    return results
 
 def insert_case(params):
     conn = get_conn()

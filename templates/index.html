@@ -9,32 +9,68 @@
     <div class="notice">
         <b>Notice: Due to current limitations, the data on this web application is not automatically updated. To update, click the manual update button below.</b><br><br>
         <div class="temp">
-            <a href="/update">Manual Update</a>
+            <a href="/update" id="update">Manual Update</a>
         </div>
     </div>
 {% endblock %}
 
 {% block body %}
     <br>
-    <form method="POST">
-        <select name="selection" id="selection" onchange="this.form.submit()">
-            <option value="{{ options[0] }}" selected>{{ options[0] }}</option>
-            {% for sel in options[1] %}
-            <option value="{{ sel }}">{{ sel }}</option>
+    <select name="country" id="country">
+        {% for opt in ddl[0]['options'] %}
+            {% if opt == ddl[0]['selected'] %}
+                <option value="{{ opt }}" selected>{{ opt }}</option>
+            {% else %}
+                <option value="{{ opt }}">{{ opt }}</option>
+            {% endif %}
+        {% endfor %}
+    </select>
+
+    {% if ddl|length == 1 %}
+
+        <select name="province_state" id="province_state" disabled><option value="" selected disabled>-</option></select>
+        <select name="county" id="county" disabled><option value="" selected disabled>-</option></select>
+
+    {% elif ddl|length >= 2 %}
+    
+        <select name="province_state" id="province_state">
+            <option value="">- Province/State -</option>
+            {% for opt in ddl[1]['options'] %}
+                {% if opt == ddl[1]['selected'] %}
+                    <option value="{{ opt }}" selected>{{ opt }}</option>
+                {% else %}
+                    <option value="{{ opt }}">{{ opt }}</option>
+                {% endif %}
             {% endfor %}
         </select>
-    </form>
+        {% if ddl|length == 3 %}
+        <select name="county" id="county">
+            <option value="">- County -</option>
+            {% for opt in ddl[2]['options'] %}
+                {% if opt == ddl[2]['selected'] %}
+                    <option value="{{ opt }}" selected>{{ opt }}</option>
+                {% else %}
+                    <option value="{{ opt }}">{{ opt }}</option>
+                {% endif %}
+            {% endfor %}
+        </select>
+        {% else %}
+        <select name="county" id="county" disabled><option value="" selected disabled>-</option></select>
+        {% endif %}
 
-    <h2>Cases in {{data[-1]['combined_key']}}</h2>
+    {% endif %}
+
+
+    <h2 id="country-name">Cases in {{ loc }}</h2>
     <h2>{{date}}</h2>
 
 
     <div class="wrapper">
         <div class="grid-1 span-single">
             <span class="label">Total Cases</span>
-            <div class="count">{{dash['total_cases']}}</div>
-            <div class="count-new">
-                {% if dash['new_cases']==0 %}
+            <div class="count" id="total-cases">{{dash['total_cases']}}</div>
+            <div class="count-new" id="total-cases-new">
+                {% if dash['new_cases'] == 0 %}
                     -
                 {% else %}
                     +{{dash['new_cases']}}
@@ -43,16 +79,16 @@
         </div>
         <div class="grid-2 span-single">
             <span class="label">7-day Cases (Total)</span>
-            <div class="count">{{dash['total_cases_seven']}}</div>
+            <div class="count" id="total-cases-seven">{{dash['total_cases_7']}}</div>
         </div>
         <div class="grid-3 span-single">
             <span class="label">7-day Cases (Average)</span>
-            <div class="count">{{dash['average_cases_seven']}}</div>
+            <div class="count" id="total-cases-seven-avg">{{dash['average_cases_7']}}</div>
         </div>
         <div class="grid-4 span-single">
             <span class="label">Deaths</span>
-            <div class="count">{{dash['total_deaths']}}</div>
-            <div class="count-new">
+            <div class="count" id="total-deaths">{{dash['total_deaths']}}</div>
+            <div class="count-new" id="total-deaths-new">
                 {% if dash['new_cases']==0 %}
                     -
                 {% else %}
@@ -62,11 +98,11 @@
         </div>
         <div class="grid-5 span-single">
             <span class="label">7-day Deaths (Total)</span>
-            <div class="count">{{dash['total_deaths_seven']}}</div>
+            <div class="count" id="total-deaths-seven">{{dash['total_deaths_7']}}</div>
         </div>
         <div class="grid-6 span-single">
             <span class="label">7-day Deaths (Average)</span>
-            <div class="count">{{dash['average_deaths_seven']}}</div>
+            <div class="count" id="total-deaths-seven-avg">{{dash['average_deaths_7']}}</div>
         </div>
         <div class="grid-graph" id="grid-graph">
             <span class="graph-label">Daily New Cases</span>
@@ -76,12 +112,14 @@
             </div>
         </div>
     </div>
+
 {% endblock %}
 
 
 {% block script %}
     <script>
-        let data = JSON.parse('{{ data | tojson | safe }}');
+        let cases = JSON.parse('{{ data | tojson | safe }}');
     </script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/graph.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/main.js') }}"></script>
 {% endblock %}

@@ -1,13 +1,3 @@
-// To be moved server-side
-// Calculate new cases from data
-data[0]['newCases'] = data[0]['confirmed']
-console.log(data.length)
-for (let i = 1; i < data.length; i++) {
-    data[i]['newCases'] = data[i]['confirmed'] - data[i-1]['confirmed']
-}
-
-//////////////////////////////////////////////////////////////////////////////
-
 let xScale = null;
 let yScale = null;
 let colorScale = null;
@@ -15,48 +5,103 @@ let colorScale = null;
 let xAxis = null;
 let yAxis = null;
 
-// Dimensions
-let w = document.getElementById("grid-graph").offsetWidth;
-let h = document.getElementById("grid-graph").offsetHeight;
+let svg = null;
 
 let margin = {top: 5, right:10, bottom: 5, left: 45};
-let width = w - margin.left - margin.right;
-let height = h - margin.top - margin.bottom;
+let width = null;
+let height = null;
 
-let svg = d3.select("#daily-graph")
+
+createAll()
+
+function createAll() {
+    calculateNew()
+
+    let maxCase = d3.max(cases, d => d.newCases);
+    let domainUpper = detUpperDomain(maxCase)
+    let interval = detInterval(domainUpper);
+
+    getDimensions();
+    createSvg();
+    createScales(domainUpper)
+    createAxis(domainUpper, interval)
+    plotDailyNewCases()
+}
+
+function detInterval(domainUpper) {
+    let zeroes = domainUpper.toString().length
+    if ((domainUpper / 4).toString().length == zeroes) {
+        return domainUpper / 4;
+    } else {
+        return domainUpper / 5;
+    }
+}
+
+function detUpperDomain(maxCase) {
+    if (maxCase < 10) {
+        return 15;
+    }
+    let val = 10**(maxCase.toString().length - 1);
+    let maxVal = Math.ceil(maxCase/val) * val;
+    return maxVal;
+}
+
+function calculateNew() {
+    cases[0]['newCases'] = cases[0]['confirmed']
+    for (let i = 1; i < cases.length; i++) {
+        let diff = cases[i]['confirmed'] - cases[i-1]['confirmed']
+        if (diff < 0) {
+            diff = 0
+        }
+        cases[i]['newCases'] = diff
+    }
+    //console.log(cases.length)
+}
+
+function getDimensions() {
+    let w = document.getElementById("grid-graph").offsetWidth;
+    let h = document.getElementById("grid-graph").offsetHeight;
+
+    width = w - margin.left - margin.right;
+    height = h - margin.top - margin.bottom;
+}
+
+function createSvg() {
+    svg = d3.select("#daily-graph")
             .append("svg")
             .attr("width", width)
             .attr("height", height);
+}
 
-
-let maxCase = d3.max(data, d => d.newCases);
-let domainUpper = maxCase - (maxCase % 2500) + 2500;    // To be dynamic
-
-// Create scales
-xScale = d3.scaleBand()
-    .domain(data.map(function(d) { return d.id; }))
+function createScales(domainUpper) {
+    // Create scales
+    xScale = d3.scaleBand()
+    .domain(cases.map(function(d) { return d.id; }))
     .range([0+margin.left, width-margin.right])
 
-yScale = d3.scaleLinear()
+    yScale = d3.scaleLinear()
     .domain([domainUpper, 0])
     .range([0+margin.top, height-margin.bottom])
+}
 
-// Axis object
-yAxisGrid = d3.axisLeft(yScale)
-    .ticks(domainUpper/2500)
-    .tickValues(d3.range(0, domainUpper + 2500, 2500))
+function createAxis(domainUpper, interval) {
+    // Axis object
+    yAxisGrid = d3.axisLeft(yScale)
+    .ticks(domainUpper/interval)
+    .tickValues(d3.range(0, domainUpper + interval, interval))
     .tickSize(-width)
-    //.tickFormat(d3.format('d'))
 
-// Create axis
-svg.append("g")			
+    // Create axis
+    svg.append("g")			
     .attr("class", "axis")
     .attr("transform", "translate("+ margin.left +", 0)")
     .call(yAxisGrid)
+}
 
-// Plot barcharts
-svg.selectAll("rect")
-    .data(data)
+function plotDailyNewCases() {
+    // Plot barcharts
+    svg.selectAll("rect")
+    .data(cases)
     .enter()
     .append("rect")
     .attr("x", function(d) { return xScale(d.id); })
@@ -64,3 +109,9 @@ svg.selectAll("rect")
     .attr("width", 3)
     .attr("height", function(d) { return height-margin.bottom - yScale(d.newCases) })
     .attr("fill", "#ccc")
+}
+
+function updateSvg() {
+    svg.remove();
+    createAll();
+}

@@ -6,16 +6,16 @@
 
 {% block body %}
     <h2>API Usage Example</h2>
-    <p>Currently only supports 'Singapore' and 'Pima Arizona US'</p><br>
+    <!-- <p>Currently only supports 'Singapore' and 'Pima Arizona US'</p><br> -->
 
     <p class="api-label">Request summary data for a country (JSON):</p>
     <div>
-        <pre><code class="codeblock">Format: https://covid-case-dashboard.herokuapp.com/api/&lt;country&gt;</code></pre>
-        <pre><code class="codeblock"># curl "https://covid-case-dashboard.herokuapp.com/api/Singapore"</code></pre>
+        <pre><code class="codeblock">Format: {{ base_url }}/&lt;country&gt;/latest</code></pre>
+        <pre><code class="codeblock"># curl "{{ base_url }}/Singapore/latest"</code></pre>
     </div>
     <p class="api-label">Request summary data for a country, province or state, and county (JSON):</p>
     <div>
-        <pre><code class="codeblock">Format: https://covid-case-dashboard.herokuapp.com/api/&lt;country&gt/&lt;province_state&gt/&lt;county&gt</code></pre>
-        <pre><code class="codeblock"># curl "https://covid-case-dashboard.herokuapp.com/api/US/Arizona/Pima"</code></pre>
+        <pre><code class="codeblock">Format: {{ base_url }}/&lt;country&gt/&lt;province_state&gt/&lt;county&gt/latest</code></pre>
+        <pre><code class="codeblock"># curl "{{ base_url }}/US/Arizona/Pima/latest"</code></pre>
     </div>
 {% endblock %}
