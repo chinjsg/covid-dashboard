@@ -104,9 +104,11 @@ function updateDropdown(options) {
     if (options.hasOwnProperty('province_states')) {
         if (options.count > 0) {
             selProvState.disabled = false;
+            selCounty.disabled = true;
             selProvState.innerHTML = '<option value="">- Province/State -</option>';
             for (item of options.province_states)
                 selProvState.innerHTML += '<option value='+item+'>'+item+'</option>';
+            selCounty.innerHTML = '<option value="">-</option>';
         } else {
             selProvState.disabled = true;
             selCounty.disabled = true;

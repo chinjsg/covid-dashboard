@@ -1,4 +1,3 @@
-from select import select
 from flask import Flask, render_template, request, redirect, json, jsonify, abort, url_for
 from flask_restful import Api, Resource
 from datetime import date, datetime
@@ -20,7 +19,7 @@ country_index = {
     14: 3
 }
 
-target = {'US': {'Arizona': ['Maricopa', 'Pima'], 'Washington': ['King']}, 'Singapore': {}}
+target = {'US': {'Arizona': ['Maricopa', 'Pima'], 'Washington': ['King']}, 'Singapore': {}, 'Japan': {'Tokyo':[]}}
 
 def format_datestr(datestr):
     """
@@ -181,19 +180,16 @@ def index():
         else:
             data = db.get_cases(selection[0], selection[1], selection[2])
             dash_data = db.get_latest_summary(selection[0], selection[1], selection[2])
-        print('batchest')
-        print(selection)
     else:
         print('Showing default US')
         data = db.get_cases(selection[0])
         dash_data = db.get_latest_summary(selection[0])
 
-    date_string = db.get_latest_date().strftime("%B %e, %G")
+    date_string = datetime.strptime(db.get_latest_date(), "%Y-%m-%d").strftime("%B %e, %G")
 
     count = len(selection)
     
     ddl = []
-    print(selection)
     if count == 1:
         selected_country = selection[0]
 
@@ -215,8 +211,6 @@ def index():
 
         selected_provstate = selection[1]
         prov_state_list = db.get_provinceState_by_country(selected_country)
-        print('provstatelist')
-        print(prov_state_list)
 
         ddl_country = {
             'selected': selected_country,
@@ -307,7 +301,10 @@ def update():
     filenames.sort(key = lambda fname: datetime.strptime(fname.split('.')[:1][0], '%m-%d-%Y'))
 
     current_date = db.get_latest_date()
-    current_date = current_date.strftime('%m-%d-%Y')
+    print(current_date)
+    current_date = datetime.strptime(current_date, "%Y-%m-%d").strftime("%m-%d-%Y")
+    #current_date = datetime.datetime.current_date.strftime('%m-%d-%Y')
+    print(current_date)
 
     last_date_str = current_date + '.csv'
     index = filenames.index(last_date_str)
@@ -369,6 +366,7 @@ def update():
                             new_row.append(col)
                     # remove the last_updated column
                     new_row.pop(col_names.index('Last_Update')+1)
+                    print(new_row)
                     db.insert_case(new_row)
 
     # To remember selections in the dropdown lists
