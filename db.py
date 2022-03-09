@@ -37,7 +37,7 @@ def get_conn():
     # except psycopg2.OperationalError as err:
     #     print(err)
     #     conn = None
-    conn = sqlite3.connect("cases_all.db")
+    conn = sqlite3.connect("cases_all_no_us.db")
     
     return conn
 

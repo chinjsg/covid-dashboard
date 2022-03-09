@@ -346,39 +346,6 @@ def update():
                 if retrieved_country == country:
                     row = update_format(row, len(col_names), datestr)
                     db.insert_case(retrieved_country, row)
-                # isTarget = False
-                # # get the index of the country_region column
-                # index = country_index[len(row)]
-                # country = row[index]
-                # if country in target.keys():
-                #     if len(target[country]) == 0:
-                #         # For countries with no Province_state
-                #         isTarget = True
-                #     else:
-                #         province_state = row[index-1]
-                #         if province_state in target[country].keys():
-                #             if country == "US":
-                #                 # County name
-                #                 county =  row[index-2]
-                #                 if county in target[country][province_state]:
-                #                     isTarget = True
-                #             else:
-                #                 isTarget = True
-
-                # if isTarget:
-                #     print(fname + ' - ' + country)
-                #     case_date = datetime.strptime(fname.split('.')[0], '%m-%d-%Y').date()
-                #     new_row = [case_date]
-                #     for col in row:
-                #         if col == '':
-                #             new_row.append(None)
-                #         else:
-                #             new_row.append(col)
-                #     # remove the last_updated column
-                #     new_row.pop(col_names.index('Last_Update')+1)
-                #     print(new_row)
-                #     db.insert_case(new_row)
-
 
     selected = country
     if (province_state is not None and county is not None):
@@ -390,4 +357,4 @@ def update():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=False)

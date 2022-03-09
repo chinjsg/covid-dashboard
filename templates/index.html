@@ -23,7 +23,11 @@
             {% if opt == ddl[0]['selected'] %}
                 <option value="{{ opt }}" selected>{{ opt }}</option>
             {% else %}
-                <option value="{{ opt }}">{{ opt }}</option>
+                {% if opt == 'US' %}
+                    <option value="{{ opt }}" disabled>{{ opt }}</option>
+                {% else %}
+                    <option value="{{ opt }}">{{ opt }}</option>
+                {% endif %}
             {% endif %}
         {% endfor %}
     </select>
@@ -114,7 +118,7 @@
             </div>
         </div>
     </div>
-    
+
 {% endblock %}
 
 
