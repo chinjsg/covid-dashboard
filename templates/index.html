@@ -7,9 +7,11 @@
 
 {% block notice %}
     <div class="notice">
-        <b>Notice: Due to current limitations, the data on this web application is not automatically updated. To update, click the manual update button below.</b><br><br>
-        <div class="temp">
-            <a href="/update" id="update">Manual Update</a>
+        <div class="notice-contents">
+            <b>Notice: Heroku's ephemeral filesystem does not allow for updates to be saved. To view the latest records, manually update below.</b><br><br>
+            <div class="temp">
+                <a href="/update" id="update">Manual Update</a>
+            </div>
         </div>
     </div>
 {% endblock %}
@@ -62,7 +64,7 @@
 
 
     <h2 id="country-name">Cases in {{ loc }}</h2>
-    <h2>{{date}}</h2>
+    <h2 id="case-date">{{date}}</h2>
 
 
     <div class="wrapper">
@@ -112,7 +114,7 @@
             </div>
         </div>
     </div>
-
+    
 {% endblock %}
 
 

@@ -1,6 +1,6 @@
-from flask import Flask, render_template, request, redirect, json, jsonify, abort, url_for
+from flask import Flask, render_template, request, redirect, jsonify, abort, url_for
 from flask_restful import Api, Resource
-from datetime import date, datetime
+from datetime import datetime
 import requests
 import csv
 import db
@@ -19,7 +19,7 @@ country_index = {
     14: 3
 }
 
-target = {'US': {'Arizona': ['Maricopa', 'Pima'], 'Washington': ['King']}, 'Singapore': {}, 'Japan': {'Tokyo':[]}}
+# target = {'US': {'Arizona': ['Maricopa', 'Pima'], 'Washington': ['King']}, 'Singapore': {}, 'Japan': {'Tokyo':[]}}
 
 def format_datestr(datestr):
     """
@@ -43,23 +43,28 @@ def update_format(row, cols, datestr):
     Each format has 6, 8, 12, 14 columns respectively, where 6 and 8 is out of order, while 12 differs by an addition of two columns at the end, and 14 being the one we want to match.
     """
     if cols >= 12:
-        new_row = [datestr] + row
+        if cols == 12:
+            new_row = [datestr] + row + [None, None]
+        else:
+            new_row = [datestr] + row
+        new_row.pop(5)
     else:
-        new_row = [None] * 15
-
+        new_row = [None] * 14
         # Arrange the columns to match latest 14-columns format
         new_row[0] = datestr
-        new_row[2] = row[0]
+        new_row[3] = row[0]
         new_row[4] = row[1]
-        new_row[5] = row[2]
-        new_row[8] = row[3]
-        new_row[9] = row[4]
-        new_row[10] = row[5]
+        new_row[7] = row[3]
+        new_row[8] = row[4]
+        new_row[9] = row[5]
         if cols == 8:
-            new_row[6] = row[6]
-            new_row[7] = row[7]
-
-    return new_row 
+            new_row[5] = row[6]
+            new_row[6] = row[7]
+    for i in range(len(new_row)):
+        if new_row[i] == '':
+            new_row[i] = None
+            
+    return new_row
 
 class GetCountry(Resource):
     def get(self, country):
@@ -153,8 +158,8 @@ class GetAllByState(Resource):
 
 # Webpage script endpoints
 api.add_resource(GetListCountry, "/country")
-api.add_resource(GetListProvinceState, "/<string:country>")
-api.add_resource(GetListCounty, "/<string:country>/<string:province_state>")
+api.add_resource(GetListProvinceState, "/country/<string:country>")
+api.add_resource(GetListCounty, "/country/<string:country>/<string:province_state>")
 
 api.add_resource(GetAllByState, "/all/<string:country>/<string:province_state>/<string:county>")
 
@@ -162,10 +167,10 @@ api.add_resource(GetAllByState, "/all/<string:country>/<string:province_state>/<
 @app.route('/', methods=['GET', 'POST'])
 def index():
     country_list = db.get_countries()['countries']
-    if 'US' in country_list:
-        selection = ['US'] # default
-    else:
-        selection = [country_list[0]]
+    # if 'US' in country_list:
+    #     selection = ['US'] # default
+    # else:
+    selection = [country_list[0]]
 
     selected = request.args.get('selected')
     if selected is not None:
@@ -181,11 +186,11 @@ def index():
             data = db.get_cases(selection[0], selection[1], selection[2])
             dash_data = db.get_latest_summary(selection[0], selection[1], selection[2])
     else:
-        print('Showing default US')
+        print('Showing default')
         data = db.get_cases(selection[0])
         dash_data = db.get_latest_summary(selection[0])
 
-    date_string = datetime.strptime(db.get_latest_date(), "%Y-%m-%d").strftime("%B %e, %G")
+    date_string = datetime.strptime(db.get_latest_date(selection[0]), "%Y-%m-%d").strftime("%B %e, %G")
 
     count = len(selection)
     
@@ -277,6 +282,11 @@ def api():
 
 @app.route('/update')
 def update():
+    # To remember selections in the dropdown lists
+    country = request.args.get('country')
+    province_state = request.args.get('province_state')
+    county = request.args.get('county')
+
     '''Modified CSV extractor code'''
     try:
         response = requests.get(url, timeout=10)
@@ -300,13 +310,7 @@ def update():
             filenames.append(file['name'])
     filenames.sort(key = lambda fname: datetime.strptime(fname.split('.')[:1][0], '%m-%d-%Y'))
 
-    current_date = db.get_latest_date()
-    print(current_date)
-    current_date = datetime.strptime(current_date, "%Y-%m-%d").strftime("%m-%d-%Y")
-    #current_date = datetime.datetime.current_date.strftime('%m-%d-%Y')
-    print(current_date)
-
-    last_date_str = current_date + '.csv'
+    last_date_str = datetime.strptime(db.get_latest_date(country), '%Y-%m-%d').strftime('%m-%d-%Y') + '.csv'
     index = filenames.index(last_date_str)
     filenames = filenames[index+1:]
 
@@ -335,44 +339,46 @@ def update():
                 # These two lines skip "additional" empty rows that appear when iterating through certain csv files. Does not affect data.
                 if len(row) == 0 or row == None:
                     continue
-
-                isTarget = False
-                # get the index of the country_region column
+                
+                datestr = datetime.strptime(fname.split('.')[0], "%m-%d-%Y").strftime("%Y-%m-%d")
                 index = country_index[len(row)]
-                country = row[index]
-                if country in target.keys():
-                    if len(target[country]) == 0:
-                        # For countries with no Province_state
-                        isTarget = True
-                    else:
-                        province_state = row[index-1]
-                        if province_state in target[country].keys():
-                            if country == "US":
-                                # County name
-                                county =  row[index-2]
-                                if county in target[country][province_state]:
-                                    isTarget = True
-                            else:
-                                isTarget = True
+                retrieved_country = row[index]
+                if retrieved_country == country:
+                    row = update_format(row, len(col_names), datestr)
+                    db.insert_case(retrieved_country, row)
+                # isTarget = False
+                # # get the index of the country_region column
+                # index = country_index[len(row)]
+                # country = row[index]
+                # if country in target.keys():
+                #     if len(target[country]) == 0:
+                #         # For countries with no Province_state
+                #         isTarget = True
+                #     else:
+                #         province_state = row[index-1]
+                #         if province_state in target[country].keys():
+                #             if country == "US":
+                #                 # County name
+                #                 county =  row[index-2]
+                #                 if county in target[country][province_state]:
+                #                     isTarget = True
+                #             else:
+                #                 isTarget = True
 
-                if isTarget:
-                    print(fname + ' - ' + country)
-                    case_date = datetime.strptime(fname.split('.')[0], '%m-%d-%Y').date()
-                    new_row = [case_date]
-                    for col in row:
-                        if col == '':
-                            new_row.append(None)
-                        else:
-                            new_row.append(col)
-                    # remove the last_updated column
-                    new_row.pop(col_names.index('Last_Update')+1)
-                    print(new_row)
-                    db.insert_case(new_row)
+                # if isTarget:
+                #     print(fname + ' - ' + country)
+                #     case_date = datetime.strptime(fname.split('.')[0], '%m-%d-%Y').date()
+                #     new_row = [case_date]
+                #     for col in row:
+                #         if col == '':
+                #             new_row.append(None)
+                #         else:
+                #             new_row.append(col)
+                #     # remove the last_updated column
+                #     new_row.pop(col_names.index('Last_Update')+1)
+                #     print(new_row)
+                #     db.insert_case(new_row)
 
-    # To remember selections in the dropdown lists
-    country = request.args.get('country')
-    province_state = request.args.get('province_state')
-    county = request.args.get('county')
 
     selected = country
     if (province_state is not None and county is not None):

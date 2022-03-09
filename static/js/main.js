@@ -4,7 +4,8 @@ let selProvState = document.getElementById('province_state');
 let selCounty = document.getElementById('county');
 
 // Elements
-let lblCountryName = document.getElementById('country-name')
+let lblCountryName = document.getElementById('country-name');
+let lblCaseDate = document.getElementById('case-date');
 
 let totalCases = document.getElementById('total-cases');
 let totalCasesNew = document.getElementById('total-cases-new');
@@ -36,7 +37,7 @@ window.onresize = updateSvg;
 selCountry.onchange = function() {
     let country = selCountry.value
     if (country !== "") {
-        fetch('/' + country).then(function(response) {
+        fetch('/country/' + country).then(function(response) {
             response.json().then(function(selectOptions) {
                 updateDropdown(selectOptions)
                 fetch('/api/' + country + "/latest").then(function(response) {
@@ -54,7 +55,7 @@ selProvState.onchange = function() {
     let country = selCountry.value
     let province_states = selProvState.value
     if (province_states !== "") {
-        fetch('/' + country + '/' + province_states).then(function(response) {
+        fetch('/country/' + country + '/' + province_states).then(function(response) {
             response.json().then(function(selectOptions) {
                 updateDropdown(selectOptions)
                 fetch('/api/' + country + '/' + province_states + "/latest").then(function(response) {
@@ -106,8 +107,9 @@ function updateDropdown(options) {
             selProvState.disabled = false;
             selCounty.disabled = true;
             selProvState.innerHTML = '<option value="">- Province/State -</option>';
-            for (item of options.province_states)
-                selProvState.innerHTML += '<option value='+item+'>'+item+'</option>';
+            for (item of options.province_states) {
+                selProvState.innerHTML += '<option value="'+item+'">'+item+'</option>';
+            }
             selCounty.innerHTML = '<option value="">-</option>';
         } else {
             selProvState.disabled = true;
@@ -119,8 +121,9 @@ function updateDropdown(options) {
         if (options.count > 0) {
             selCounty.disabled = false;
             selCounty.innerHTML = '<option value="">- County -</option>';
-            for (item of options.counties)
-                selCounty.innerHTML += '<option value='+item+'>'+item+'</option>';
+            for (item of options.counties) {
+                selCounty.innerHTML += '<option value="'+item+'">'+item+'</option>';
+            }
         } else {
             selCounty.disabled = true;
             selCounty.innerHTML = '<option value="">-</option>';
@@ -130,6 +133,7 @@ function updateDropdown(options) {
 
 function updateDashboard(data, loc, country, province_state, county) {
     lblCountryName.innerHTML = 'Cases in ' + loc;
+    lblCaseDate.innerHTML = data.date_long;
 
     totalCases.innerHTML = data.total_cases;
     totalCasesNew.innerHTML = data.new_cases;

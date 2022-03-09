@@ -7,7 +7,7 @@ let yAxis = null;
 
 let svg = null;
 
-let margin = {top: 5, right:10, bottom: 5, left: 45};
+let margin = {top: 5, right:10, bottom: 5, left: 48};
 let width = null;
 let height = null;
 

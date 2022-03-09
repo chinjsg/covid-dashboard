@@ -10,12 +10,32 @@
 
     <p class="api-label">Request summary data for a country (JSON):</p>
     <div>
-        <pre><code class="codeblock">Format: {{ base_url }}/&lt;country&gt;/latest</code></pre>
+        <pre><code class="codeblock">Format: {{ base_url }}/&lt;:country&gt;/latest</code></pre>
         <pre><code class="codeblock"># curl "{{ base_url }}/Singapore/latest"</code></pre>
+    </div>
+    <p class="api-label">Request summary data for a country and province or state (JSON):</p>
+    <div>
+        <pre><code class="codeblock">Format: {{ base_url }}/&lt;:country&gt;/&lt;:province_state&gt;/latest</code></pre>
+        <pre><code class="codeblock"># curl "{{ base_url }}/Australia/Queensland/latest"</code></pre>
     </div>
     <p class="api-label">Request summary data for a country, province or state, and county (JSON):</p>
     <div>
-        <pre><code class="codeblock">Format: {{ base_url }}/&lt;country&gt/&lt;province_state&gt/&lt;county&gt/latest</code></pre>
+        <pre><code class="codeblock">Format: {{ base_url }}/&lt;:country&gt/&lt;:province_state&gt/&lt;:county&gt/latest</code></pre>
         <pre><code class="codeblock"># curl "{{ base_url }}/US/Arizona/Pima/latest"</code></pre>
+    </div>
+    <p class="api-label">Request daily-case data for a country (JSON):</p>
+    <div>
+        <pre><code class="codeblock">Format: {{ base_url }}/&lt;:country&gt;</code></pre>
+        <pre><code class="codeblock"># curl "{{ base_url }}/Singapore"</code></pre>
+    </div>
+    <p class="api-label">Request daily-case data for a country, province or state (JSON):</p>
+    <div>
+        <pre><code class="codeblock">Format: {{ base_url }}/&lt;:country&gt;/&lt;:province_state&gt;</code></pre>
+        <pre><code class="codeblock"># curl "{{ base_url }}/Australia/Queensland"</code></pre>
+    </div>
+    <p class="api-label">Request daily-case data for a country, province or state, and county (JSON):</p>
+    <div>
+        <pre><code class="codeblock">Format: {{ base_url }}/&lt;:country&gt;/&lt;:province_state&gt;/&lt;:county&gt</code></pre>
+        <pre><code class="codeblock"># curl "{{ base_url }}/US/Arizona/Pima"</code></pre>
     </div>
 {% endblock %}
